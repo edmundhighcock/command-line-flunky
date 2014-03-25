@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+begin
+  require 'command-line-flunky-test-utility'
+rescue LoadError
+  require 'rubygems'
+  require 'command-line-flunky-test-utility'
+end
+
+CommandLineFlunky.run_script
