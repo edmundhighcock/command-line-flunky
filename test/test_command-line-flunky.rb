@@ -1,4 +1,6 @@
+
 require 'helper'
+load 'test_utility'
 
 class TestCommandLineFlunky < Test::Unit::TestCase
   should "probably rename this file and start testing for real" do

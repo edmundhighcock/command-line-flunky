@@ -16,9 +16,9 @@ Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://guides.rubygems.org/specification-reference/ for more options
   gem.name = "command-line-flunky"
   gem.homepage = "http://github.com/edmundhighcock/command-line-flunky"
-  gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.license = "GPLv3"
+  gem.summary = %Q{A framework for quickly creating a command line tool and manual.}
+  gem.description = %Q{A framework for quickly creating a command line tool and manual. Coherently and simply links a Ruby class/module interface to a set of command line commands and options. A comprehensive example is in the test folder.}
   gem.email = "edmundhighcock@users.sourceforge.net"
   gem.authors = ["Edmund Highcock"]
   # dependencies defined in Gemfile
