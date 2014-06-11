@@ -3,7 +3,7 @@ if RUBY_VERSION.to_f < 1.9
 	raise "Ruby version 1.9 or greater required (current version is #{RUBY_VERSION})"
 end
 module CommandLineFlunky
-# 	$stderr.puts STARTUP_MESSAGE unless $has_put_startup_message
+ 	$stderr.puts STARTUP_MESSAGE unless $has_put_startup_message
 
 	COMMAND_FOLDER = Dir.pwd
         SCRIPT_FOLDER = File.dirname(File.expand_path(SCRIPT_FILE)) #i.e. where the script using command line flunky is
@@ -121,12 +121,13 @@ CommandLineFlunky::COMMANDS.each do |command|
 	eval("def #\{command[1]}(*args) 
 		  CommandLineFlunky.send(#\{command[0].to_sym.inspect}, *args)
 	      end")
+	end
 
 EOF
 
 	def self.interactive_mode(copts={})
 # 		process_command_options(copts)
-	  			unless false and FileTest.exist? (ENV['HOME'] + "/.#{PROJECT_NAME}_interactive_options.rb")
+	  			unless FileTest.exist? (ENV['HOME'] + "/.#{PROJECT_NAME}_interactive_options.rb")
 				File.open(ENV['HOME'] + "/.#{PROJECT_NAME}_interactive_options.rb", 'w') do |file|
 					file.puts <<EOF
 	$has_put_startup_message = true #please leave!
@@ -162,16 +163,49 @@ EOF
 				end"
 				file.puts CommandLineFlunky::INTERACTIVE_METHODS
 			end
-			exec %[#{Config::CONFIG['bindir']}/irb#{Config::CONFIG['ruby_install_name'].sub(/ruby/, '')} -f -I '#{SCRIPT_FOLDER}' -I '#{File.dirname(__FILE__)}' -I '#{Dir.pwd}' -I '#{ENV['HOME']}' -r '.#{PROJECT_NAME}_interactive_options' -r '#{File.basename(SCRIPT_FILE)}'  -r .int.tmp ]
+			exec %[#{RbConfig::CONFIG['bindir']}/irb#{RbConfig::CONFIG['ruby_install_name'].sub(/ruby/, '')} -f -I '#{SCRIPT_FOLDER}' -I '#{File.dirname(__FILE__)}' -I '#{Dir.pwd}' -I '#{ENV['HOME']}' -r '.#{PROJECT_NAME}_interactive_options' -r '#{File.basename(SCRIPT_FILE)}'  -r .int.tmp ]
 	end
 
 	
 	def self.run_script
+		do_profile = (ENV[key = %[#{PROJECT_NAME.upcase}_PROFILE]] and ENV[key].size > 0) ?  ENV[key] : false
+		if do_profile
+			begin
+				require 'ruby-prof'
+			rescue LoadError
+				eputs "Please install ruby-prof using ' $ gem install ruby-prof'"
+				exit
+			end
+
+			 # Profile the code
+		 RubyProf.start
+		end
+		set_default_command_options_from_command_line
 		setup(DEFAULT_COMMAND_OPTIONS)
 		return if $command_line_flunky_interactive_mode
 		command = COMMANDS.find{|com| com.slice(0..1).include? ARGV[0]}
 		raise "Command #{ARGV[0]} not found" unless command
 		send(command[0].to_sym, *ARGV.slice(1...(1+command[2])), DEFAULT_COMMAND_OPTIONS)
+		if do_profile
+			result = RubyProf.stop
+			if ENV[key2 = %[#{PROJECT_NAME.upcase}_PROFILE_EXCLUDE]] and ENV[key2].size > 0
+				result.eliminate_methods!(eval(ENV[key2]))
+			end
+
+			# Print a flat profile to text
+			case ENV[key]
+			when /html/i
+				printer = RubyProf::GraphHtmlPrinter.new(result)
+			when /graph/i
+				printer = RubyProf::GraphPrinter.new(result)
+			when /txt/i
+				printer = RubyProf::FlatPrinter.new(result)
+			else 
+				raise "#{key} should be 'html', 'graph' or 'txt'"
+			end
+
+			printer.print($stdout, {})
+		end
 	end
   def self.manual(copts={})
 			help = <<EOF
@@ -203,7 +237,7 @@ EOF
 		end
 end
 
-CommandLineFlunky.set_default_command_options_from_command_line
+#CommandLineFlunky.set_default_command_options_from_command_line
 
 ####################
 # CommandLineFlunky.run_script unles
